@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Commercial Planner</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --g:#0F9B6E;--gd:#0A6E4E;--gl:#E6F7F1;
+  --r:#E53935;--rl:#FDECEA;
+  --a:#F59E0B;--al:#FEF3C7;
+  --b:#2563EB;--bl:#EFF6FF;
+  --v:#7C3AED;--vl:#EDE9FE;
+  --w:#fff;
+  --s0:#F9FAFB;--s1:#F3F4F6;--s2:#E5E7EB;--s3:#D1D5DB;
+  --t4:#9CA3AF;--t5:#6B7280;--t7:#374151;--t8:#1F2937;--t9:#111827;
+  --radlg:14px;--radsm:6px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 4px 16px rgba(0,0,0,.08);
+  --font:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--s0);color:var(--t9);font-size:14px;line-height:1.5;height:100vh;overflow:hidden;display:flex;}
+#sidebar{width:220px;flex-shrink:0;background:var(--t9);display:flex;flex-direction:column;height:100vh;}
+#sb-logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.07);}
+.sb-icon{width:34px;height:34px;background:var(--g);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
+.sb-title{color:#fff;font-weight:700;font-size:14px;}.sb-sub{color:rgba(255,255,255,.35);font-size:11px;}
+#sb-nav{padding:10px 8px;flex:1;overflow-y:auto;}
+.nav-sec{font-size:10px;font-weight:700;color:rgba(255,255,255,.22);text-transform:uppercase;letter-spacing:.07em;padding:10px 8px 5px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:7px;cursor:pointer;color:rgba(255,255,255,.48);font-size:13px;font-weight:500;transition:all .13s;margin-bottom:1px;user-select:none;}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85);}
+.nav-item.active{background:rgba(15,155,110,.22);color:#fff;}
+.nav-item svg{flex-shrink:0;}
+.live-row{display:flex;justify-content:space-between;padding:4px 7px;}
+.live-lbl{font-size:11px;color:rgba(255,255,255,.32);}.live-val{font-family:var(--mono);font-size:11px;font-weight:700;}
+#sb-foot{padding:10px 14px;border-top:1px solid rgba(255,255,255,.07);}
+.sb-sel{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:rgba(255,255,255,.72);font-size:12px;padding:6px 28px 6px 10px;font-family:var(--font);cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;}
+.sb-sel-wrap{position:relative;margin-bottom:8px;}
+.sb-sel-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:rgba(255,255,255,.35);font-size:10px;}
+.sb-foot-info{font-size:11px;color:rgba(255,255,255,.22);line-height:1.7;}
+#main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+#topbar{background:var(--w);border-bottom:1px solid var(--s2);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.tb-title{font-size:17px;font-weight:700;}.tb-sub{font-size:11px;color:var(--t4);margin-top:1px;}
+.tb-metrics{display:flex;gap:10px;}
+.tb-met{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--s0);border:1px solid var(--s2);border-radius:8px;font-size:12px;}
+.tb-met-lbl{color:var(--t4);}.tb-met-val{font-family:var(--mono);font-weight:700;font-size:13px;}
+#page{flex:1;overflow-y:auto;padding:22px 24px 48px;}
+.card{background:var(--w);border:1px solid var(--s2);border-radius:var(--radlg);padding:1.2rem;box-shadow:var(--sh);}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.kpi{background:var(--w);border:1px solid var(--s2);border-radius:var(--radlg);padding:1rem 1.15rem;box-shadow:var(--sh);}
+.kpi-lbl{font-size:11px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;}
+.kpi-val{font-family:var(--mono);font-size:24px;font-weight:700;line-height:1;margin-bottom:4px;}
+.kpi-sub{font-size:11px;color:var(--t4);}
+.kpi-bar{height:3px;background:var(--s1);border-radius:2px;margin-top:8px;overflow:hidden;}
+.kpi-bar-f{height:100%;border-radius:2px;}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{text-align:left;padding:8px 11px;font-size:11px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;border-bottom:1.5px solid var(--s1);white-space:nowrap;}
+.tbl td{padding:9px 11px;border-bottom:1px solid var(--s1);font-size:13px;vertical-align:middle;}
+.tbl tbody tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover td{background:var(--s0);}
+.tbl tfoot td{padding:10px 11px;font-weight:700;font-size:13px;background:var(--s0);border-top:1.5px solid var(--s2);}
+input,select{font-family:var(--font);font-size:13px;border:1.5px solid var(--s2);border-radius:var(--radsm);padding:7px 10px;width:100%;background:var(--w);color:var(--t9);outline:none;transition:border-color .14s,box-shadow .14s;}
+input:focus,select:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(15,155,110,.12);}
+input[type=number]{font-family:var(--mono);}
+label.lbl{font-size:11px;font-weight:700;color:var(--t5);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;}
+.btn{display:inline-flex;align-items:center;gap:5px;cursor:pointer;border:1.5px solid var(--s2);border-radius:var(--radsm);padding:7px 14px;font-size:13px;font-family:var(--font);font-weight:500;background:var(--w);color:var(--t7);transition:all .13s;white-space:nowrap;}
+.btn:hover{background:var(--s0);border-color:var(--s3);}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--g);color:#fff;border-color:var(--g);}
+.btn-primary:hover{background:var(--gd);border-color:var(--gd);}
+.btn-sm{padding:4px 10px;font-size:12px;}
+.btn-danger{color:var(--r);border-color:rgba(229,57,53,.2);background:transparent;}
+.btn-danger:hover{background:var(--rl);}
+.btn-ghost{border-color:transparent;background:transparent;}
+.btn-ghost:hover{background:var(--s1);}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.pb{height:5px;background:var(--s2);border-radius:3px;overflow:hidden;min-width:50px;}
+.pb-f{height:100%;border-radius:3px;}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;color:#fff;font-family:var(--mono);}
+.num{font-family:var(--mono);}
+.sec-title{font-size:13px;font-weight:700;color:var(--t7);margin-bottom:12px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.mb{margin-bottom:12px;}
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.5;}
+.alert-a{background:var(--al);color:#92400e;border:1px solid rgba(245,158,11,.25);}
+.alert-g{background:var(--gl);color:var(--gd);border:1px solid rgba(15,155,110,.2);}
+.alert-b{background:var(--bl);color:#1e40af;border:1px solid rgba(37,99,235,.2);}
+.period-sw{display:flex;background:var(--s1);border-radius:8px;padding:3px;gap:2px;}
+.period-btn{font-family:var(--font);font-size:13px;padding:5px 15px;border-radius:6px;border:none;background:transparent;cursor:pointer;color:var(--t5);font-weight:500;transition:all .13s;}
+.period-btn.active{background:var(--w);color:var(--t9);font-weight:700;box-shadow:var(--sh);}
+.yr-btn{font-family:var(--font);font-size:12px;padding:5px 12px;border-radius:6px;border:1.5px solid var(--s2);background:var(--w);cursor:pointer;color:var(--t5);font-weight:500;transition:all .13s;}
+.yr-btn.active{border-color:var(--g);color:var(--g);background:var(--gl);font-weight:700;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--w);border-radius:var(--radlg);padding:1.5rem;width:600px;max-width:95vw;box-shadow:0 10px 40px rgba(0,0,0,.14);animation:fu .2s ease;max-height:90vh;overflow-y:auto;}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+.expand-panel{border-top:1px solid var(--s1);margin-top:14px;padding-top:16px;display:none;}
+.expand-panel.open{display:block;}
+.cur-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:12px;font-size:10px;font-weight:700;background:var(--bl);color:var(--b);vertical-align:middle;margin-left:4px;}
+.wt-onsite{background:#E6F7F1;color:#0A6E4E;}.wt-offshore{background:#EDE9FE;color:#4C1D95;}
+.fx-info{font-size:11px;color:var(--t4);font-family:var(--mono);}
+.converted{font-size:11px;color:var(--t5);font-family:var(--mono);display:block;margin-top:1px;}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fade-in{animation:fu .22s ease forwards;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--s2);border-radius:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+.st-active{background:#E6F7F1;color:#0A6E4E;}.st-pipeline{background:#FEF3C7;color:#92400e;}
+.st-completed{background:#F3F4F6;color:#374151;}.st-paused{background:#FDECEA;color:#b71c1c;}
+.st-on_hold{background:#EDE9FE;color:#4C1D95;}
+.avstack{display:flex;}.avstack .av{border:2px solid var(--w);margin-left:-6px;}.avstack .av:first-child{margin-left:0;}
+.flex-end{display:flex;gap:8px;justify-content:flex-end;}
+.fx-table input{text-align:right;font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div id="sb-logo">
+    <div class="sb-icon">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="white"><rect x="1" y="10" width="4" height="7" rx="1"/><rect x="7" y="6" width="4" height="11" rx="1"/><rect x="13" y="2" width="4" height="15" rx="1"/></svg>
+    </div>
+    <div class="sb-title">Commercial Planner</div>
+    <div class="sb-sub">P&amp;L · Multi-currency · Forecast</div>
+  </div>
+  <div id="sb-nav">
+    <div class="nav-sec">Navigation</div>
+    <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" data-page="projects" onclick="showPage('projects')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="1.5"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="9" y2="9"/></svg>
+      Projects
+    </div>
+    <div class="nav-item" data-page="team" onclick="showPage('team')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><circle cx="6" cy="5" r="2.5"/><circle cx="11.5" cy="5.5" r="2" opacity=".55"/><path d="M1 13c0-2.5 2.2-4 5-4s5 1.5 5 4"/><path d="M11.5 9.5c1.8.3 3.5 1.2 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".55"/></svg>
+      Team &amp; Costs
+    </div>
+    <div class="nav-item" data-page="forecast" onclick="showPage('forecast')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,12 5.5,8 8.5,10 13,4"/><polyline points="11,4 13,4 13,6"/></svg>
+      Forecast
+    </div>
+    <div class="nav-item" data-page="fx" onclick="showPage('fx')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v1.5M8 9.5V11M6 6.5c0-1 1-1.5 2-1.5s2 .5 2 1.5c0 2-4 2-4 4h4"/></svg>
+      FX Rates
+    </div>
+    <div class="nav-sec" style="margin-top:14px">This month</div>
+    <div id="sb-live"></div>
+  </div>
+  <div id="sb-foot">
+    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.22);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Reporting currency</div>
+    <div class="sb-sel-wrap">
+      <select id="cur-sel" class="sb-sel" onchange="setReportingCurrency(this.value)">
+        <option value="INR">&#8377; INR — Indian Rupee</option>
+        <option value="USD">$ USD — US Dollar</option>
+        <option value="EUR">&#8364; EUR — Euro</option>
+        <option value="GBP">&#163; GBP — British Pound</option>
+        <option value="AED">AED — UAE Dirham</option>
+        <option value="SGD">S$ SGD — Singapore Dollar</option>
+        <option value="JPY">&#165; JPY — Japanese Yen</option>
+        <option value="CAD">C$ CAD — Canadian Dollar</option>
+        <option value="AUD">A$ AUD — Australian Dollar</option>
+      </select>
+      <div class="sb-sel-arrow">&#9660;</div>
+    </div>
+    <div class="sb-foot-info">&#128190; Auto-saved<br/><span id="sb-count"></span></div>
+  </div>
+</nav>
+
+<div id="main">
+  <div id="topbar">
+    <div>
+      <div class="tb-title" id="tb-title">Dashboard</div>
+      <div class="tb-sub" id="tb-sub">Live overview</div>
+    </div>
+    <div class="tb-metrics">
+      <div class="tb-met"><span class="tb-met-lbl">Revenue</span><span class="tb-met-val" id="hdr-rev" style="color:var(--g)">—</span><span class="tb-met-lbl">/mo</span></div>
+      <div class="tb-met"><span class="tb-met-lbl">Cost</span><span class="tb-met-val" id="hdr-cost" style="color:var(--r)">—</span><span class="tb-met-lbl">/mo</span></div>
+      <div class="tb-met"><span class="tb-met-lbl">Margin</span><span class="tb-met-val" id="hdr-margin">—</span></div>
+    </div>
+  </div>
+  <div id="page">
+    <div id="pg-dashboard" class="fade-in"></div>
+    <div id="pg-projects"  style="display:none"></div>
+    <div id="pg-team"      style="display:none"></div>
+    <div id="pg-forecast"  style="display:none"></div>
+    <div id="pg-fx"        style="display:none"></div>
+  </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-bg" id="modal-proj">
+  <div class="modal">
+    <div class="modal-title">New project <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-proj')" style="font-size:16px;padding:2px 8px">&#10005;</button></div>
+    <div class="g2 mb">
+      <div><label class="lbl">Project name *</label><input id="np-name" placeholder="e.g. Digital Transformation"/></div>
+      <div><label class="lbl">Client / Account</label><input id="np-client" placeholder="e.g. HDFC Bank"/></div>
+    </div>
+    <div style="background:var(--bl);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#1e40af;display:flex;align-items:center;gap:8px;">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v1.5M8 9.5V11M6 6.5c0-1 1-1.5 2-1.5s2 .5 2 1.5c0 2-4 2-4 4h4"/></svg>
+      Set the <strong style="margin:0 3px">billing currency</strong> — what the customer pays you in. All amounts are converted to your reporting currency for P&amp;L.
+    </div>
+    <div class="g3 mb">
+      <div><label class="lbl">Billing currency</label><select id="np-bcur" onchange="updNewProjCur()"></select></div>
+      <div><label class="lbl">Monthly billing (<span id="np-bcur-lbl">$</span>)</label><input id="np-rev" type="number" placeholder="50000"/></div>
+      <div><label class="lbl">Status</label>
+        <select id="np-status"><option value="active">active</option><option value="pipeline">pipeline</option><option value="completed">completed</option><option value="paused">paused</option><option value="on_hold">on hold</option></select>
+      </div>
+    </div>
+    <div class="g2 mb">
+      <div><label class="lbl">Start date</label><input id="np-start" type="date"/></div>
+      <div><label class="lbl">End date</label><input id="np-end" type="date"/></div>
+    </div>
+    <div class="mb"><label class="lbl">Notes</label><input id="np-notes" placeholder="Optional notes"/></div>
+    <div class="flex-end"><button class="btn" onclick="closeModal('modal-proj')">Cancel</button><button class="btn btn-primary" onclick="addProject()">Create project</button></div>
+  </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal-bg" id="modal-member">
+  <div class="modal">
+    <div class="modal-title">Add team member <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-member')" style="font-size:16px;padding:2px 8px">&#10005;</button></div>
+    <div class="g2 mb">
+      <div><label class="lbl">Full name *</label><input id="nm-name" placeholder="Anita Kumar"/></div>
+      <div><label class="lbl">Email</label><input id="nm-email" placeholder="anita@company.com"/></div>
+      <div><label class="lbl">Role / Title</label><input id="nm-role" placeholder="Senior Developer"/></div>
+      <div><label class="lbl">Department</label><input id="nm-dept" placeholder="Engineering"/></div>
+    </div>
+    <div style="background:var(--gl);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--gd);">
+      &#127758; Set the member's <strong>work type, location, and local salary currency</strong>. Salaries are automatically converted to your reporting currency for P&amp;L comparisons.
+    </div>
+    <div class="g3 mb">
+      <div><label class="lbl">Work type</label>
+        <select id="nm-wt"><option value="offshore">Offshore</option><option value="onsite">Onsite</option></select>
+      </div>
+      <div><label class="lbl">Location</label><input id="nm-loc" placeholder="e.g. India, USA" oninput="autoSuggestCurrency('nm-loc','nm-scur')"/></div>
+      <div><label class="lbl">Salary currency</label><select id="nm-scur"></select></div>
+    </div>
+    <div class="g3 mb">
+      <div><label class="lbl">Monthly salary (<span id="nm-scur-lbl">₹</span>)</label><input id="nm-sal" type="number" placeholder="95000"/></div>
+      <div><label class="lbl">Benefits %</label><input id="nm-ben" type="number" placeholder="12"/></div>
+    </div>
+    <div class="flex-end"><button class="btn" onclick="closeModal('modal-member')">Cancel</button><button class="btn btn-primary" onclick="addMember()">Add member</button></div>
+  </div>
+</div>
+
+<input type="file" id="xl-import" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)"/>
+
+<script>
+var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var NOW=new Date(),CY=NOW.getFullYear(),CM=NOW.getMonth();
+var AVC=['#0F9B6E','#2563EB','#F59E0B','#7C3AED','#DC2626','#0891B2','#059669','#D97706'];
+var SKEY='cpv4';
+var trendChart=null,foreChart=null;
+var expandedProj=null,editMember=null;
+var foreView='monthly',foreYear=CY;
+var currentPage='dashboard';
+
+// ── Currency definitions ───────────────────────────────────────────────────
+var CURRENCIES={
+  INR:{code:'INR',sym:'₹',name:'Indian Rupee',   locale:'en-IN',style:'lakh'},
+  USD:{code:'USD',sym:'$',name:'US Dollar',       locale:'en-US',style:'std'},
+  EUR:{code:'EUR',sym:'€',name:'Euro',            locale:'de-DE',style:'std'},
+  GBP:{code:'GBP',sym:'£',name:'British Pound',  locale:'en-GB',style:'std'},
+  AED:{code:'AED',sym:'AED ',name:'UAE Dirham',   locale:'en-AE',style:'std'},
+  SGD:{code:'SGD',sym:'S$',name:'Singapore Dollar',locale:'en-SG',style:'std'},
+  JPY:{code:'JPY',sym:'¥',name:'Japanese Yen',   locale:'ja-JP',style:'std'},
+  CAD:{code:'CAD',sym:'C$',name:'Canadian Dollar',locale:'en-CA',style:'std'},
+  AUD:{code:'AUD',sym:'A$',name:'Australian Dollar',locale:'en-AU',style:'std'},
+};
+var CUR_CODES=Object.keys(CURRENCIES);
+
+// Location → suggested currency
+var LOC_MAP={
+  'india':'INR','bangalore':'INR','bengaluru':'INR','mumbai':'INR','delhi':'INR','hyderabad':'INR','chennai':'INR','pune':'INR',
+  'usa':'USD','united states':'USD','new york':'USD','san francisco':'USD','seattle':'USD','chicago':'USD','austin':'USD',
+  'uk':'GBP','united kingdom':'GBP','london':'GBP','manchester':'GBP',
+  'germany':'EUR','france':'EUR','netherlands':'EUR','spain':'EUR','italy':'EUR','paris':'EUR','berlin':'EUR','amsterdam':'EUR',
+  'uae':'AED','dubai':'AED','abu dhabi':'AED',
+  'singapore':'SGD',
+  'japan':'JPY','tokyo':'JPY',
+  'canada':'CAD','toronto':'CAD','vancouver':'CAD',
+  'australia':'AUD','sydney':'AUD','melbourne':'AUD',
+};
+
+function suggestCurrency(location){
+  var l=(location||'').toLowerCase().trim();
+  for(var k in LOC_MAP){if(l.indexOf(k)>=0)return LOC_MAP[k];}
+  return null;
+}
+function autoSuggestCurrency(locInputId,curSelId){
+  var loc=document.getElementById(locInputId).value;
+  var sug=suggestCurrency(loc);
+  if(sug){
+    document.getElementById(curSelId).value=sug;
+    var lblId=curSelId==='nm-scur'?'nm-scur-lbl':null;
+    if(lblId){var lbl=document.getElementById(lblId);if(lbl)lbl.textContent=CURRENCIES[sug].sym;}
+  }
+}
+
+// Default FX rates (relative to USD = 1.0)
+var DEF_FX={USD:1,INR:83.5,EUR:0.92,GBP:0.79,AED:3.67,SGD:1.34,JPY:149.5,CAD:1.36,AUD:1.53};
+
+// ── FX Conversion ──────────────────────────────────────────────────────────
+function toReport(amount,fromCode){
+  var rates=state.fxRates||DEF_FX;
+  var rc=state.reportingCurrency||'INR';
+  var fromRate=rates[fromCode]||rates['USD']||1;
+  var toRate=rates[rc]||1;
+  // amount (in fromCode) → USD → reportingCurrency
+  return amount/fromRate*toRate;
+}
+function fmtInCur(amount,code){
+  // format a raw amount in its own currency
+  var cur=CURRENCIES[code]||CURRENCIES.USD;
+  var a=Math.abs(amount),s=(amount<0?'-':'')+cur.sym;
+  if(cur.style==='lakh'){
+    if(a>=10000000)return s+(a/10000000).toFixed(2)+' Cr';
+    if(a>=100000)return s+(a/100000).toFixed(2)+' L';
+    if(a>=1000)return s+Math.round(a/1000)+'K';
+    return s+Math.round(a).toLocaleString('en-IN');
+  } else {
+    if(a>=1000000000)return s+(a/1000000000).toFixed(2)+'B';
+    if(a>=1000000)return s+(a/1000000).toFixed(2)+'M';
+    if(a>=1000)return s+Math.round(a/1000)+'K';
+    return s+Math.round(a).toLocaleString(cur.locale);
+  }
+}
+function getCur(){return CURRENCIES[state.reportingCurrency||'INR']||CURRENCIES.INR;}
+function fmt(n){return fmtInCur(n,state.reportingCurrency||'INR');}
+function pct(n){return Math.round(n||0)+'%';}
+function chartTickFmt(v){
+  var cur=getCur(),a=Math.abs(v*1000);
+  if(a>=1000000)return cur.sym+(v/1000).toFixed(1)+'M';
+  return cur.sym+v+'K';
+}
+function chartTipFmt(v){return fmt(v*1000);}
+
+// ── Currency select builder ─────────────────────────────────────────────────
+function buildCurSelect(selId,selected){
+  var el=document.getElementById(selId);if(!el)return;
+  el.innerHTML=CUR_CODES.map(function(c){
+    var cur=CURRENCIES[c];
+    return'<option value="'+c+'"'+(c===selected?' selected':'')+'>'+cur.sym+' '+c+' — '+cur.name+'</option>';
+  }).join('');
+}
+function setReportingCurrency(code){
+  if(!CURRENCIES[code])return;
+  state.reportingCurrency=code;
+  saveState();
+  var sel=document.getElementById('cur-sel');if(sel)sel.value=code;
+  updateHeader();renderPage(currentPage);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function uid(){return Math.random().toString(36).slice(2,9);}
+function ini(n){return(n||'').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();}
+function avc(n){return AVC[(n||'X').charCodeAt(0)%AVC.length];}
+function scls(s){return({active:'st-active',pipeline:'st-pipeline',completed:'st-completed',paused:'st-paused',on_hold:'st-on_hold'})[s]||'st-completed';}
+function tagHtml(s){return'<span class="tag '+scls(s)+'">'+(s||'—')+'</span>';}
+function avHtml(name,size){
+  size=size||26;return'<div class="av" style="width:'+size+'px;height:'+size+'px;background:'+avc(name)+';font-size:'+Math.round(size*0.34)+'px;">'+ini(name)+'</div>';
+}
+
+// ── Cost/Revenue helpers (all return values in REPORTING currency) ──────────
+function mcostRaw(m){return+(m.monthlySalary||0)*(1+(+(m.benefitsPct||0))/100);}
+function mcostReported(m){return toReport(mcostRaw(m), m.salaryCurrency||'INR');}
+function projRevReported(p){return toReport(p.monthlyRevenue||0, p.billingCurrency||'INR');}
+
+function isActive(p,yr,mo){
+  var d=new Date(yr,mo,15);
+  if(p.startDate){var sd=new Date(p.startDate);if(d<new Date(sd.getFullYear(),sd.getMonth(),1))return false;}
+  if(p.endDate){var ed=new Date(p.endDate);if(d>new Date(ed.getFullYear(),ed.getMonth()+1,0))return false;}
+  return p.status==='active'||p.status==='pipeline';
+}
+function projCostReported(p,team,yr,mo){
+  if(!isActive(p,yr,mo))return 0;
+  return(p.assignments||[]).reduce(function(s,a){
+    var m=team.find(function(t){return t.id===a.memberId;});
+    return s+(m?mcostReported(m)*(+a.allocationPct||0)/100:0);
+  },0);
+}
+
+// ── Default data ────────────────────────────────────────────────────────────
+var DEF_TEAM=[
+  {id:'t1',name:'Arjun Sharma',   role:'Senior Developer',     department:'Engineering',email:'',workType:'offshore',location:'Bangalore, India', salaryCurrency:'INR',monthlySalary:120000,benefitsPct:15},
+  {id:'t2',name:'Priya Nair',     role:'Project Manager',      department:'Management', email:'',workType:'onsite',  location:'Dubai, UAE',        salaryCurrency:'AED',monthlySalary:12000, benefitsPct:10},
+  {id:'t3',name:'Rahul Mehta',    role:'UX Designer',          department:'Design',     email:'',workType:'offshore',location:'Pune, India',        salaryCurrency:'INR',monthlySalary:90000, benefitsPct:12},
+  {id:'t4',name:'Sneha Iyer',     role:'Business Analyst',     department:'Analysis',   email:'',workType:'offshore',location:'Hyderabad, India',   salaryCurrency:'INR',monthlySalary:85000, benefitsPct:12},
+  {id:'t5',name:'Karthik Rajan',  role:'Full Stack Developer',  department:'Engineering',email:'',workType:'onsite',  location:'London, UK',         salaryCurrency:'GBP',monthlySalary:5500,  benefitsPct:18},
+];
+var DEF_PROJ=[
+  {id:'p1',name:'Digital Transformation', client:'HDFC Bank',  status:'active',  startDate:CY+'-01-01',endDate:CY+'-12-31',billingCurrency:'INR',monthlyRevenue:500000,notes:'',assignments:[{memberId:'t1',allocationPct:80},{memberId:'t2',allocationPct:50},{memberId:'t3',allocationPct:30}]},
+  {id:'p2',name:'E-Commerce Platform',    client:'Flipkart',   status:'active',  startDate:CY+'-03-01',endDate:CY+'-09-30',billingCurrency:'USD',monthlyRevenue:15000, notes:'',assignments:[{memberId:'t1',allocationPct:20},{memberId:'t4',allocationPct:60},{memberId:'t5',allocationPct:100}]},
+  {id:'p3',name:'Analytics Dashboard',   client:'Zomato',     status:'pipeline',startDate:CY+'-06-01',endDate:CY+'-11-30',billingCurrency:'USD',monthlyRevenue:10000, notes:'',assignments:[{memberId:'t3',allocationPct:70},{memberId:'t4',allocationPct:40}]},
+];
+
+// ── State ───────────────────────────────────────────────────────────────────
+var state={team:[],projects:[],reportingCurrency:'INR',fxRates:{}};
+function loadState(){
+  try{
+    var d=localStorage.getItem(SKEY);
+    if(d){
+      var p=JSON.parse(d);
+      state.team=p.team||DEF_TEAM.slice();
+      state.projects=p.projects||DEF_PROJ.slice();
+      state.reportingCurrency=p.reportingCurrency||'INR';
+      state.fxRates=Object.assign({},DEF_FX,p.fxRates||{});
+    }else{
+      state.team=DEF_TEAM.slice();state.projects=DEF_PROJ.slice();
+      state.reportingCurrency='INR';state.fxRates=Object.assign({},DEF_FX);
+    }
+  }catch(e){
+    state.team=DEF_TEAM.slice();state.projects=DEF_PROJ.slice();
+    state.reportingCurrency='INR';state.fxRates=Object.assign({},DEF_FX);
+  }
+}
+function saveState(){try{localStorage.setItem(SKEY,JSON.stringify(state));}catch(e){}}
+
+// ── Live metrics (in reporting currency) ───────────────────────────────────
+function getLive(){
+  var rev=state.projects.filter(function(p){return isActive(p,CY,CM);}).reduce(function(s,p){return s+projRevReported(p);},0);
+  var cost=state.projects.reduce(function(s,p){return s+projCostReported(p,state.team,CY,CM);},0);
+  var tc=state.team.reduce(function(s,m){return s+mcostReported(m);},0);
+  return{rev:rev,cost:cost,margin:rev-cost,mp:rev>0?(rev-cost)/rev*100:0,tc:tc};
+}
+function updateHeader(){
+  var m=getLive();
+  document.getElementById('hdr-rev').textContent=fmt(m.rev);
+  document.getElementById('hdr-cost').textContent=fmt(m.cost);
+  var mp=Math.round(m.mp);
+  var el=document.getElementById('hdr-margin');
+  el.textContent=mp+'%';el.style.color=m.margin>=0?'var(--g)':'var(--r)';
+  document.getElementById('sb-live').innerHTML=[
+    ['Revenue',fmt(m.rev),'#34d399'],['Cost',fmt(m.cost),'#f87171'],
+    ['Margin',mp+'%',m.mp>=0?'#34d399':'#f87171']
+  ].map(function(x){return'<div class="live-row"><span class="live-lbl">'+x[0]+'</span><span class="live-val" style="color:'+x[2]+'">'+x[1]+'</span></div>';}).join('');
+  document.getElementById('sb-count').textContent=state.team.length+' members · '+state.projects.length+' projects';
+  var sel=document.getElementById('cur-sel');if(sel)sel.value=state.reportingCurrency;
+}
+
+function showPage(page){
+  document.querySelectorAll('.nav-item').forEach(function(el){el.classList.toggle('active',el.dataset.page===page);});
+  ['dashboard','projects','team','forecast','fx'].forEach(function(p){
+    document.getElementById('pg-'+p).style.display=p===page?'block':'none';
+  });
+  currentPage=page;
+  var titles={dashboard:'Dashboard',projects:'Projects',team:'Team & Costs',forecast:'Forecast',fx:'FX Rates'};
+  document.getElementById('tb-title').textContent=titles[page]||page;
+  var subs={
+    dashboard:MO[CM]+' '+CY+' — reporting in '+state.reportingCurrency,
+    projects:state.projects.length+' projects · '+state.projects.filter(function(p){return p.status==='active';}).length+' active',
+    team:state.team.length+' members · multi-currency salaries',
+    forecast:'Monthly · Quarterly · Annual · FX-adjusted',
+    fx:'Edit live exchange rates — all P&L recalculates instantly',
+  };
+  document.getElementById('tb-sub').textContent=subs[page]||'';
+  renderPage(page);updateHeader();
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  var el=document.getElementById('pg-dashboard');
+  var m=getLive();
+  var kpis=[
+    {l:'Monthly Revenue',v:fmt(m.rev),sub:state.projects.filter(function(p){return p.status==='active';}).length+' active projects',col:'var(--g)',p:Math.min(100,m.rev/Math.max(1,m.rev)*100)},
+    {l:'Team Cost (alloc.)',v:fmt(m.cost),sub:'of '+fmt(m.tc)+' total cost',col:'var(--r)',p:m.tc>0?m.cost/m.tc*100:0},
+    {l:'Gross Margin',v:fmt(m.margin),sub:pct(m.mp)+' margin rate',col:m.margin>=0?'var(--g)':'var(--r)',p:Math.min(Math.max(0,m.mp),100)},
+    {l:'Bench Cost',v:fmt(Math.max(0,m.tc-m.cost)),sub:'unallocated headcount',col:'var(--a)',p:m.tc>0?Math.max(0,m.tc-m.cost)/m.tc*100:0},
+  ];
+  var kpiHtml=kpis.map(function(k){
+    return'<div class="kpi"><div class="kpi-lbl">'+k.l+'</div><div class="kpi-val" style="color:'+k.col+'">'+k.v+'</div><div class="kpi-sub">'+k.sub+'</div><div class="kpi-bar"><div class="kpi-bar-f" style="width:'+Math.round(k.p)+'%;background:'+k.col+'35"></div></div></div>';
+  }).join('');
+
+  var allocHtml=state.team.map(function(tm){
+    var al=state.projects.filter(function(p){return p.status==='active';}).reduce(function(s,p){var a=p.assignments.find(function(x){return x.memberId===tm.id;});return s+(a?+a.allocationPct:0);},0);
+    var ov=al>100;
+    var wtBadge='<span class="tag '+(tm.workType==='onsite'?'wt-onsite':'wt-offshore')+'" style="font-size:9px;margin-left:4px">'+(tm.workType||'offshore')+'</span>';
+    return'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'+avHtml(tm.name,24)+'<div style="flex:1;min-width:0;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font-size:12px;font-weight:600;color:'+(ov?'var(--r)':'var(--t9)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+tm.name+wtBadge+'</span><span class="num" style="font-size:11px;color:'+(ov?'var(--r)':'var(--t5)')+';flex-shrink:0;margin-left:6px;">'+al+'%'+(ov?' ⚠':'')+'</span></div><div class="pb"><div class="pb-f" style="width:'+Math.min(al,100)+'%;background:'+(ov?'var(--r)':al>=80?'var(--a)':'var(--g)')+'"></div></div></div></div>';
+  }).join('');
+
+  var projRows=state.projects.map(function(p){
+    var revR=projRevReported(p),c=projCostReported(p,state.team,CY,CM),mg=revR-c,mp=revR>0?mg/revR*100:0;
+    var rcBadge='<span class="cur-badge">'+p.billingCurrency+'</span>';
+    var avs=p.assignments.slice(0,4).map(function(a){var t=state.team.find(function(x){return x.id===a.memberId;});return t?'<div title="'+t.name+'" style="border:2px solid var(--w);border-radius:50%;margin-left:-6px;flex-shrink:0;">'+avHtml(t.name,22)+'</div>':'';}).join('');
+    if(p.assignments.length>4)avs+='<div style="width:22px;height:22px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--t5);font-weight:700;margin-left:-6px;border:2px solid var(--w);flex-shrink:0;">+'+(p.assignments.length-4)+'</div>';
+    return'<tr><td><strong>'+p.name+'</strong>'+rcBadge+'</td><td style="color:var(--t5)">'+(p.client||'—')+'</td><td>'+tagHtml(p.status)+'</td>'
+      +'<td><span class="num" style="color:var(--g);font-weight:700">'+fmt(revR)+'</span><span class="converted">'+fmtInCur(p.monthlyRevenue,p.billingCurrency)+' '+p.billingCurrency+'</span></td>'
+      +'<td class="num" style="color:var(--r)">'+fmt(c)+'</td>'
+      +'<td class="num" style="font-weight:700;color:'+(mg>=0?'var(--g)':'var(--r)')+'">'+fmt(mg)+'</td>'
+      +'<td class="num" style="font-size:12px;font-weight:700;color:'+(mp>=0?'var(--g)':'var(--r)')+'">'+pct(mp)+'</td>'
+      +'<td><div style="display:flex;align-items:center">'+avs+'</div></td></tr>';
+  }).join('');
+
+  el.innerHTML='<div class="kpi-grid">'+kpiHtml+'</div>'
+    +'<div style="display:grid;grid-template-columns:1.65fr 1fr;gap:14px;margin-bottom:14px;">'
+      +'<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div class="sec-title" style="margin:0">12-month P&amp;L trend <span style="font-weight:400;color:var(--t4);font-size:12px">('+getCur().sym+' thousands)</span></div><div style="display:flex;gap:12px;font-size:11px;color:var(--t4)">'+[['Revenue','#0F9B6E'],['Cost','#E53935'],['Bench','#F59E0B'],['Margin','#2563EB']].map(function(x){return'<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:'+x[1]+';display:inline-block"></span>'+x[0]+'</span>';}).join('')+'</div></div><div style="position:relative;height:210px"><canvas id="dash-chart"></canvas></div></div>'
+      +'<div class="card"><div class="sec-title">Team allocation</div>'+allocHtml+'</div>'
+    +'</div>'
+    +'<div class="card"><div class="sec-title">Project P&amp;L — '+MO[CM]+' '+CY+' (in '+state.reportingCurrency+')</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Project</th><th>Client</th><th>Status</th><th>Revenue/mo</th><th>Cost/mo</th><th>Margin/mo</th><th>Margin %</th><th>Team</th></tr></thead><tbody>'+projRows+'</tbody></table></div></div>';
+
+  setTimeout(function(){
+    var ctx=document.getElementById('dash-chart');if(!ctx)return;
+    if(trendChart){trendChart.destroy();trendChart=null;}
+    var labels=[],rev=[],cost=[],bench=[],margin=[];
+    for(var i=-5;i<=6;i++){
+      var d=new Date(CY,CM+i,1),y=d.getFullYear(),mo=d.getMonth();
+      labels.push(MO[mo]+"'"+(y%100));
+      var r=state.projects.filter(function(p){return isActive(p,y,mo);}).reduce(function(s,p){return s+projRevReported(p);},0);
+      var c=state.projects.reduce(function(s,p){return s+projCostReported(p,state.team,y,mo);},0);
+      var tc=state.team.reduce(function(s,m){return s+mcostReported(m);},0);
+      rev.push(Math.round(r/1000));cost.push(Math.round(c/1000));
+      bench.push(Math.round(Math.max(0,tc-c)/1000));margin.push(Math.round((r-c)/1000));
+    }
+    trendChart=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[
+      {label:'Revenue',data:rev,backgroundColor:'#0F9B6E',borderRadius:3,barPercentage:.7},
+      {label:'Cost',data:cost,backgroundColor:'#E53935',borderRadius:3,barPercentage:.7},
+      {label:'Bench',data:bench,backgroundColor:'#F59E0B',borderRadius:3,barPercentage:.7},
+      {label:'Margin',data:margin,type:'line',borderColor:'#2563EB',backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#2563EB',tension:.35,yAxisID:'y'},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return chartTipFmt(c.parsed.y);}}}},scales:{x:{grid:{display:false},ticks:{font:{size:10,family:'DM Mono'},color:'#9CA3AF'}},y:{grid:{color:'#F3F4F6'},ticks:{font:{size:10,family:'DM Mono'},color:'#9CA3AF',callback:function(v){return chartTickFmt(v);}}}}}});
+  },50);
+}
+
+// ── PROJECTS ─────────────────────────────────────────────────────────────────
+function renderProjects(){
+  var el=document.getElementById('pg-projects');
+  var totRev=state.projects.filter(function(p){return isActive(p,CY,CM);}).reduce(function(s,p){return s+projRevReported(p);},0);
+  var totCost=state.projects.reduce(function(s,p){return s+projCostReported(p,state.team,CY,CM);},0);
+
+  var projCards=state.projects.map(function(p){
+    var revR=projRevReported(p),c=projCostReported(p,state.team,CY,CM),mg=revR-c,mp=revR>0?mg/revR*100:0;
+    var isExp=expandedProj===p.id;
+    var teamRows=state.team.map(function(tm){
+      var a=p.assignments.find(function(x){return x.memberId===tm.id;});
+      var al=a?+a.allocationPct:0,mc=mcostReported(tm),mcRaw=mcostRaw(tm);
+      var totalAl=state.projects.filter(function(x){return x.status==='active';}).reduce(function(s,x){var ax=x.assignments.find(function(y){return y.memberId===tm.id;});return s+(ax?+ax.allocationPct:0);},0);
+      var ov=totalAl>100;
+      var wtBadge='<span class="tag '+(tm.workType==='onsite'?'wt-onsite':'wt-offshore')+'" style="font-size:9px">'+( tm.workType||'offshore')+'</span>';
+      var locText=tm.location?'<div style="font-size:10px;color:var(--t4)">&#127758; '+tm.location+' · '+(tm.salaryCurrency||'INR')+'</div>':'';
+      var salCell='<div class="num" style="font-size:12px">'+fmt(mc)+'</div><div class="converted">'+fmtInCur(mcRaw,tm.salaryCurrency||'INR')+' '+( tm.salaryCurrency||'INR')+'</div>';
+      return'<tr style="background:'+(al>0?'rgba(15,155,110,.04)':'')+'">'
+        +'<td><div style="display:flex;align-items:center;gap:8px">'+avHtml(tm.name,24)+'<div><div style="font-weight:600;font-size:12px;display:flex;align-items:center;gap:5px">'+tm.name+wtBadge+'</div>'+locText+'</div></div></td>'
+        +'<td style="color:var(--t5)">'+tm.role+'</td>'
+        +'<td>'+salCell+'</td>'
+        +'<td><div style="display:flex;align-items:center;gap:6px"><input type="number" min="0" max="100" value="'+(al||'')+'" placeholder="0" style="width:68px;text-align:right" onchange="setAlloc(\''+p.id+'\',\''+tm.id+'\',this.value)"/><span style="color:var(--t4);font-size:12px">%</span></div></td>'
+        +'<td class="num" style="color:'+(al>0?'var(--g)':'var(--t4)')+';font-weight:'+(al>0?700:400)+'">'+(al>0?fmt(mc*al/100):'—')+'</td>'
+        +'<td><div style="display:flex;align-items:center;gap:7px"><div class="pb" style="width:60px"><div class="pb-f" style="width:'+Math.min(totalAl,100)+'%;background:'+(ov?'var(--r)':totalAl>=80?'var(--a)':'var(--g)')+'"></div></div><span class="num" style="font-size:11px;color:'+(ov?'var(--r)':'var(--t5)')+';font-weight:'+(ov?700:400)+'">'+Math.round(totalAl)+'%'+(ov?' ⚠':'')+'</span></div></td>'
+      +'</tr>';
+    }).join('');
+
+    var statusOpts=['active','pipeline','completed','paused','on_hold'].map(function(s){return'<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s+'</option>';}).join('');
+    var curOpts=CUR_CODES.map(function(c){return'<option value="'+c+'"'+(c===(p.billingCurrency||'INR')?' selected':'')+'>'+(CURRENCIES[c].sym)+' '+c+'</option>';}).join('');
+    var bcBadge='<span class="cur-badge">'+p.billingCurrency+'</span>';
+    return'<div class="card" style="margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">'
+        +'<div style="flex:1;min-width:0">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-weight:700;font-size:14px">'+p.name+'</span>'+tagHtml(p.status)+bcBadge+'</div>'
+          +'<div style="font-size:12px;color:var(--t4);margin-bottom:8px">'+(p.client||'')+(p.startDate?' · '+p.startDate+' &rarr; '+(p.endDate||'ongoing'):'')+'</div>'
+          +'<div style="display:flex;gap:18px;font-size:13px;flex-wrap:wrap;align-items:center">'
+            +'<span>Billing <strong class="num" style="color:var(--b)">'+fmtInCur(p.monthlyRevenue,p.billingCurrency||'INR')+' '+p.billingCurrency+'</strong></span>'
+            +'<span>Revenue <strong class="num" style="color:var(--g)">'+fmt(revR)+'/mo</strong></span>'
+            +'<span>Cost <strong class="num" style="color:var(--r)">'+fmt(c)+'/mo</strong></span>'
+            +'<span>Margin <strong class="num" style="color:'+(mg>=0?'var(--g)':'var(--r)')+'">'+fmt(mg)+'/mo ('+pct(mp)+')</strong></span>'
+            +'<span style="color:var(--t4)">'+p.assignments.length+' member'+(p.assignments.length!==1?'s':'')+'</span>'
+          +'</div>'
+        +'</div>'
+        +'<div style="display:flex;gap:6px;flex-shrink:0">'
+          +'<button class="btn btn-sm'+(isExp?' btn-primary':'')+'" onclick="toggleProj(\''+p.id+'\')">'+(isExp?'&#9650; Close':'&#9660; Edit')+'</button>'
+          +'<button class="btn btn-sm btn-danger" onclick="deleteProj(\''+p.id+'\')">&#10005;</button>'
+        +'</div>'
+      +'</div>'
+      +'<div class="expand-panel'+(isExp?' open':'')+'">'
+        +'<div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr 1fr 1fr;gap:10px" class="mb">'
+          +'<div><label class="lbl">Name</label><input value="'+p.name+'" onchange="updProj(\''+p.id+'\',\'name\',this.value)"/></div>'
+          +'<div><label class="lbl">Client</label><input value="'+(p.client||'')+'" onchange="updProj(\''+p.id+'\',\'client\',this.value)"/></div>'
+          +'<div><label class="lbl">Billing currency</label><select onchange="updProj(\''+p.id+'\',\'billingCurrency\',this.value)">'+curOpts+'</select></div>'
+          +'<div><label class="lbl">Monthly billing</label><input type="number" value="'+p.monthlyRevenue+'" onchange="updProj(\''+p.id+'\',\'monthlyRevenue\',this.value)"/></div>'
+          +'<div><label class="lbl">Status</label><select onchange="updProj(\''+p.id+'\',\'status\',this.value)">'+statusOpts+'</select></div>'
+          +'<div></div>'
+        +'</div>'
+        +'<div class="g2 mb">'
+          +'<div><label class="lbl">Start date</label><input type="date" value="'+(p.startDate||'')+'" onchange="updProj(\''+p.id+'\',\'startDate\',this.value)"/></div>'
+          +'<div><label class="lbl">End date</label><input type="date" value="'+(p.endDate||'')+'" onchange="updProj(\''+p.id+'\',\'endDate\',this.value)"/></div>'
+        +'</div>'
+        +'<div class="mb"><label class="lbl">Notes</label><input value="'+(p.notes||'')+'" onchange="updProj(\''+p.id+'\',\'notes\',this.value)"/></div>'
+        +'<div class="alert alert-b mb" style="font-size:11px">Customer billing <strong>'+fmtInCur(p.monthlyRevenue,p.billingCurrency||'INR')+' '+p.billingCurrency+'</strong> converts to <strong>'+fmt(revR)+'</strong> at 1 '+p.billingCurrency+' = '+fmt(toReport(1,p.billingCurrency||'INR'))+' '+state.reportingCurrency+'. Edit FX rates in the FX Rates page.</div>'
+        +'<div class="sec-title">Team allocation</div>'
+        +'<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Member</th><th>Role</th><th>Cost/mo ('+state.reportingCurrency+')</th><th>Allocation %</th><th>Cost to project</th><th>Total alloc.</th></tr></thead><tbody>'+teamRows+'</tbody>'
+        +'<tfoot><tr><td colspan="2">Totals — '+MO[CM]+' '+CY+'</td><td></td><td></td><td class="num" style="color:var(--r)">'+fmt(c)+'</td><td><span class="num" style="font-size:12px;font-weight:700;color:'+(mg>=0?'var(--g)':'var(--r)')+'">Margin: '+fmt(mg)+' ('+pct(mp)+')</span></td></tr></tfoot>'
+        +'</table></div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">'
+    +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input placeholder="Search projects&#8230;" oninput="renderProjects()" style="width:180px"/>'
+    +'<div style="display:flex;gap:3px">'+['All','active','pipeline','completed','paused'].map(function(s){return'<button class="btn btn-sm" onclick="renderProjects()">'+( s==='All'?'All ('+state.projects.length+')':s)+'</button>';}).join('')+'</div></div>'
+    +'<button class="btn btn-primary" onclick="openModal(\'modal-proj\')">+ New project</button></div>'
+    +'<div style="display:flex;gap:12px;margin-bottom:14px">'
+    +[{l:'Monthly Revenue',v:fmt(totRev),c:'var(--g)'},{l:'Monthly Cost',v:fmt(totCost),c:'var(--r)'},{l:'Gross Margin',v:fmt(totRev-totCost),c:(totRev-totCost)>=0?'var(--g)':'var(--r)'}].map(function(k){return'<div class="kpi" style="flex:1"><div class="kpi-lbl">'+k.l+'</div><div class="kpi-val" style="color:'+k.c+';font-size:20px">'+k.v+'</div><div class="kpi-sub">converted to '+state.reportingCurrency+'</div></div>';}).join('')
+    +'</div>'
+    +'<div>'+projCards+'</div>';
+}
+
+function toggleProj(id){expandedProj=expandedProj===id?null:id;renderProjects();}
+function deleteProj(id){if(!confirm('Delete this project?'))return;state.projects=state.projects.filter(function(p){return p.id!==id;});if(expandedProj===id)expandedProj=null;saveState();renderProjects();updateHeader();}
+function updProj(id,field,val){
+  state.projects=state.projects.map(function(p){if(p.id!==id)return p;var u=Object.assign({},p);u[field]=field==='monthlyRevenue'?+val||0:val;return u;});
+  saveState();updateHeader();renderProjects();
+}
+function setAlloc(pid,mid,val){
+  var v=+val||0;
+  state.projects=state.projects.map(function(p){
+    if(p.id!==pid)return p;
+    var a=p.assignments.filter(function(x){return x.memberId!==mid;});
+    if(v)a=a.concat([{memberId:mid,allocationPct:v}]);
+    return Object.assign({},p,{assignments:a});
+  });
+  saveState();updateHeader();
+}
+function updNewProjCur(){
+  var c=document.getElementById('np-bcur').value;
+  var lbl=document.getElementById('np-bcur-lbl');
+  if(lbl&&CURRENCIES[c])lbl.textContent=CURRENCIES[c].sym;
+}
+function addProject(){
+  var name=document.getElementById('np-name').value.trim();
+  if(!name){alert('Project name required');return;}
+  state.projects.push({id:uid(),name:name,client:document.getElementById('np-client').value.trim(),
+    billingCurrency:document.getElementById('np-bcur').value||state.reportingCurrency,
+    status:document.getElementById('np-status').value,
+    startDate:document.getElementById('np-start').value,endDate:document.getElementById('np-end').value,
+    monthlyRevenue:+document.getElementById('np-rev').value||0,
+    notes:document.getElementById('np-notes').value.trim(),assignments:[]});
+  saveState();closeModal('modal-proj');
+  ['np-name','np-client','np-rev','np-start','np-end','np-notes'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('np-status').value='active';
+  renderProjects();updateHeader();
+}
+
+// ── TEAM ─────────────────────────────────────────────────────────────────────
+function renderTeam(){
+  var el=document.getElementById('pg-team');
+  var totCostR=state.team.reduce(function(s,m){return s+mcostReported(m);},0);
+  var totSalR=state.team.reduce(function(s,m){return s+toReport(m.monthlySalary||0,m.salaryCurrency||'INR');},0);
+
+  function mAlloc(id){return state.projects.filter(function(p){return p.status==='active';}).reduce(function(s,p){var a=p.assignments.find(function(x){return x.memberId===id;});return s+(a?+a.allocationPct:0);},0);}
+  function mProjs(id){return state.projects.filter(function(p){return p.assignments.some(function(a){return a.memberId===id;});});}
+
+  var curOpts=CUR_CODES.map(function(c){return'<option value="'+c+'">'+CURRENCIES[c].sym+' '+c+'</option>';}).join('');
+
+  var rows=state.team.map(function(tm){
+    var mc=mcostReported(tm),mcRaw=mcostRaw(tm),al=mAlloc(tm.id),ov=al>100;
+    var mps=mProjs(tm.id);
+    if(editMember===tm.id){
+      var eCurOpts=CUR_CODES.map(function(c){return'<option value="'+c+'"'+(c===(tm.salaryCurrency||'INR')?' selected':'')+'>'+(CURRENCIES[c].sym)+' '+c+'</option>';}).join('');
+      return'<tr>'
+        +'<td><div style="display:flex;align-items:center;gap:8px">'+avHtml(tm.name,28)+'<div><input id="ef-name" value="'+tm.name+'" style="width:130px;margin-bottom:3px"/><input id="ef-email" value="'+(tm.email||'')+'" placeholder="email" style="width:130px;font-size:11px"/></div></div></td>'
+        +'<td><input id="ef-role" value="'+tm.role+'" style="width:130px"/></td>'
+        +'<td><input id="ef-dept" value="'+tm.department+'" style="width:100px"/></td>'
+        +'<td><select id="ef-wt" style="width:90px"><option value="offshore"'+(tm.workType==='offshore'?' selected':'')+'>Offshore</option><option value="onsite"'+(tm.workType==='onsite'?' selected':'')+'>Onsite</option></select></td>'
+        +'<td><input id="ef-loc" value="'+(tm.location||'')+'" placeholder="City, Country" style="width:130px" oninput="autoSuggestCurrency(\'ef-loc\',\'ef-scur\')"/></td>'
+        +'<td><select id="ef-scur" style="width:80px">'+eCurOpts+'</select></td>'
+        +'<td><input id="ef-sal" type="number" value="'+tm.monthlySalary+'" style="width:100px"/></td>'
+        +'<td><input id="ef-ben" type="number" value="'+tm.benefitsPct+'" style="width:55px"/></td>'
+        +'<td class="num" style="color:var(--r);font-weight:700">'+fmt(mc)+'</td>'
+        +'<td colspan="2"><div style="display:flex;gap:5px"><button class="btn btn-primary btn-sm" onclick="saveMemberEdit(\''+tm.id+'\')">Save</button><button class="btn btn-sm" onclick="cancelEdit()">Cancel</button></div></td>'
+      +'</tr>';
+    }
+    var wtBadge='<span class="tag '+(tm.workType==='onsite'?'wt-onsite':'wt-offshore')+'">'+(tm.workType||'offshore')+'</span>';
+    var locText='<div style="font-size:11px;color:var(--t4)">&#127758; '+(tm.location||'—')+'</div>';
+    var salCell='<div class="num" style="font-size:12px;font-weight:600">'+fmt(mc)+'</div><div class="converted">'+fmtInCur(mcRaw,tm.salaryCurrency||'INR')+' '+(tm.salaryCurrency||'INR')+'</div>';
+    var curBadge='<span class="cur-badge">'+(tm.salaryCurrency||'INR')+'</span>';
+    var badges=mps.slice(0,2).map(function(p){return'<span class="tag '+scls(p.status)+'" style="font-size:10px">'+p.name.split(' ')[0]+'</span>';}).join('');
+    if(mps.length>2)badges+='<span style="font-size:10px;color:var(--t4)">+'+(mps.length-2)+'</span>';
+    if(mps.length===0)badges='<span style="font-size:11px;color:var(--s3)">Bench</span>';
+    return'<tr>'
+      +'<td><div style="display:flex;align-items:center;gap:9px">'+avHtml(tm.name,28)+'<div><div style="font-weight:700;font-size:13px">'+tm.name+'</div><div style="font-size:11px;color:var(--t4)">'+(tm.email||'—')+'</div></div></div></td>'
+      +'<td style="color:var(--t7)">'+tm.role+'</td>'
+      +'<td style="color:var(--t5);font-size:12px">'+tm.department+'</td>'
+      +'<td>'+wtBadge+locText+'</td>'
+      +'<td>'+curBadge+'</td>'
+      +'<td>'+salCell+'</td>'
+      +'<td style="color:var(--t5)">'+tm.benefitsPct+'%</td>'
+      +'<td><div style="display:flex;align-items:center;gap:7px"><div class="pb" style="width:52px"><div class="pb-f" style="width:'+Math.min(al,100)+'%;background:'+(ov?'var(--r)':al>=80?'var(--a)':'var(--g)')+'"></div></div><span class="num" style="font-size:11px;color:'+(ov?'var(--r)':'var(--t5)')+';font-weight:'+(ov?700:400)+'">'+al+'%'+(ov?' ⚠':'')+'</span></div></td>'
+      +'<td>'+badges+'</td>'
+      +'<td><div style="display:flex;gap:5px"><button class="btn btn-sm" onclick="startEdit(\''+tm.id+'\')">Edit</button><button class="btn btn-sm btn-danger" onclick="delMember(\''+tm.id+'\')">&#10005;</button></div></td>'
+    +'</tr>';
+  }).join('');
+
+  el.innerHTML='<div class="kpi-grid">'
+    +[{l:'Headcount',v:state.team.length,sub:'team members',c:'var(--b)'},
+      {l:'Onsite / Offshore',v:state.team.filter(function(m){return m.workType==='onsite';}).length+' / '+state.team.filter(function(m){return m.workType!=='onsite';}).length,sub:'members by type',c:'var(--v)'},
+      {l:'Total Benefits',v:fmt(totCostR-totSalR),sub:'per month ('+state.reportingCurrency+')',c:'var(--a)'},
+      {l:'Total Cost',v:fmt(totCostR),sub:'per month ('+state.reportingCurrency+')',c:'var(--r)'}
+    ].map(function(k){return'<div class="kpi"><div class="kpi-lbl">'+k.l+'</div><div class="kpi-val" style="color:'+k.c+';font-size:20px">'+k.v+'</div><div class="kpi-sub">'+k.sub+'</div></div>';}).join('')
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">'
+    +'<button class="btn btn-primary" onclick="openModal(\'modal-member\')">+ Add member</button>'
+    +'<button class="btn" onclick="document.getElementById(\'xl-import\').click()">&#8593; Import Excel</button>'
+    +'<button class="btn" onclick="dlTemplate()">&#8595; Template</button>'
+    +'<button class="btn" onclick="exportTeam()">&#8595; Export</button>'
+    +'<span style="font-size:11px;color:var(--t4)">Excel columns: Name · Role · Department · Email · Work Type · Location · Salary Currency · Monthly Salary · Benefits %</span>'
+    +'</div>'
+    +'<div class="alert alert-b mb">All salaries are displayed in their <strong>local currency</strong> and automatically converted to <strong>'+state.reportingCurrency+'</strong> for P&amp;L using your FX rates. Edit rates in the FX Rates page.</div>'
+    +'<div class="card" style="overflow-x:auto"><table class="tbl"><thead><tr>'
+    +'<th>Member</th><th>Role</th><th>Department</th><th>Type &amp; Location</th><th>Currency</th><th>Cost/mo ('+state.reportingCurrency+')</th><th>Benefits</th><th>Alloc.</th><th>Projects</th><th>Actions</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody>'
+    +'<tfoot><tr><td colspan="4">Total ('+state.team.length+' members)</td><td></td><td class="num" style="color:var(--r)">'+fmt(totCostR)+'</td><td colspan="4" style="color:var(--a);font-size:12px">Benefits: '+fmt(totCostR-totSalR)+' · Salary: '+fmt(totSalR)+'</td></tr></tfoot>'
+    +'</table></div>';
+}
+
+function startEdit(id){editMember=id;renderTeam();}
+function cancelEdit(){editMember=null;renderTeam();}
+function saveMemberEdit(id){
+  state.team=state.team.map(function(m){
+    if(m.id!==id)return m;
+    return Object.assign({},m,{
+      name:document.getElementById('ef-name').value.trim()||m.name,
+      email:document.getElementById('ef-email').value.trim(),
+      role:document.getElementById('ef-role').value.trim()||m.role,
+      department:document.getElementById('ef-dept').value.trim()||m.department,
+      workType:document.getElementById('ef-wt').value||m.workType,
+      location:document.getElementById('ef-loc').value.trim(),
+      salaryCurrency:document.getElementById('ef-scur').value||m.salaryCurrency,
+      monthlySalary:+document.getElementById('ef-sal').value||m.monthlySalary,
+      benefitsPct:+document.getElementById('ef-ben').value||0,
+    });
+  });
+  editMember=null;saveState();renderTeam();updateHeader();
+}
+function delMember(id){
+  if(!confirm('Remove this team member?'))return;
+  state.team=state.team.filter(function(m){return m.id!==id;});
+  state.projects=state.projects.map(function(p){return Object.assign({},p,{assignments:p.assignments.filter(function(a){return a.memberId!==id;})});});
+  saveState();renderTeam();updateHeader();
+}
+function addMember(){
+  var name=document.getElementById('nm-name').value.trim();
+  if(!name){alert('Name required');return;}
+  state.team.push({id:uid(),name:name,email:document.getElementById('nm-email').value.trim(),
+    role:document.getElementById('nm-role').value.trim(),department:document.getElementById('nm-dept').value.trim(),
+    workType:document.getElementById('nm-wt').value||'offshore',
+    location:document.getElementById('nm-loc').value.trim(),
+    salaryCurrency:document.getElementById('nm-scur').value||'INR',
+    monthlySalary:+document.getElementById('nm-sal').value||0,
+    benefitsPct:+document.getElementById('nm-ben').value||0});
+  saveState();closeModal('modal-member');
+  ['nm-name','nm-email','nm-role','nm-dept','nm-loc','nm-sal','nm-ben'].forEach(function(id){document.getElementById(id).value='';});
+  renderTeam();updateHeader();
+}
+function importExcel(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(evt){
+    try{
+      var wb=XLSX.read(evt.target.result,{type:'binary'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var data=XLSX.utils.sheet_to_json(ws);
+      var count=0;
+      data.forEach(function(r){
+        var name=String(r['Name']||r['name']||'').trim();if(!name)return;
+        var loc=String(r['Location']||r['location']||'').trim();
+        var scur=String(r['Salary Currency']||r['salary_currency']||'').trim().toUpperCase()||suggestCurrency(loc)||'INR';
+        state.team.push({id:uid(),name:name,
+          role:String(r['Role']||r['role']||'').trim(),department:String(r['Department']||r['department']||'').trim(),
+          email:String(r['Email']||r['email']||'').trim(),
+          workType:(String(r['Work Type']||r['work_type']||'offshore')).toLowerCase().trim(),
+          location:loc,salaryCurrency:CURRENCIES[scur]?scur:'INR',
+          monthlySalary:parseFloat(String(r['Monthly Salary']||r['Salary']||'0').replace(/[^\d.]/g,''))||0,
+          benefitsPct:parseFloat(String(r['Benefits %']||r['Benefits']||'0').replace(/[^\d.]/g,''))||0});count++;
+      });
+      saveState();alert('Imported '+count+' member(s)');renderTeam();updateHeader();
+    }catch(err){alert('Import failed: '+err.message);}
+  };
+  reader.readAsBinaryString(file);e.target.value='';
+}
+function dlTemplate(){
+  var ws=XLSX.utils.aoa_to_sheet([
+    ['Name','Role','Department','Email','Work Type','Location','Salary Currency','Monthly Salary','Benefits %'],
+    ['Anita Kumar','Senior Developer','Engineering','anita@co.com','offshore','Bangalore, India','INR',95000,12],
+    ['James Smith','Delivery Manager','Management','james@co.com','onsite','London, UK','GBP',7000,18],
+    ['Sarah Müller','UX Designer','Design','sarah@co.com','onsite','Berlin, Germany','EUR',5500,15],
+  ]);
+  ws['!cols']=[{wch:22},{wch:24},{wch:18},{wch:26},{wch:10},{wch:22},{wch:16},{wch:16},{wch:12}];
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Team');XLSX.writeFile(wb,'team_import_template.xlsx');
+}
+function exportTeam(){
+  var data=state.team.map(function(m){
+    var row={'Name':m.name,'Role':m.role,'Department':m.department,'Email':m.email||'',
+      'Work Type':m.workType||'offshore','Location':m.location||'',
+      'Salary Currency':m.salaryCurrency||'INR','Monthly Salary':m.monthlySalary,'Benefits %':m.benefitsPct,
+      'Total Cost (local)':Math.round(mcostRaw(m))};
+    row['Total Cost ('+state.reportingCurrency+')']=Math.round(mcostReported(m));
+    return row;
+  });
+  var ws=XLSX.utils.json_to_sheet(data);
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Team');XLSX.writeFile(wb,'team_export.xlsx');
+}
+
+// ── FORECAST ──────────────────────────────────────────────────────────────────
+function getMonthData(year){
+  return Array.from({length:12},function(_,i){
+    var rev=state.projects.filter(function(p){return isActive(p,year,i);}).reduce(function(s,p){return s+projRevReported(p);},0);
+    var cost=state.projects.reduce(function(s,p){return s+projCostReported(p,state.team,year,i);},0);
+    var tc=state.team.reduce(function(s,m){return s+mcostReported(m);},0);
+    var bench=Math.max(0,tc-cost);
+    return{label:MO[i],rev:rev,cost:cost,tc:tc,bench:bench,mg:rev-cost,mp:rev>0?(rev-cost)/rev*100:0,isCur:year===CY&&i===CM};
+  });
+}
+function renderForecast(){
+  var el=document.getElementById('pg-forecast');
+  var mdata=getMonthData(foreYear);
+  var ann=mdata.reduce(function(a,m){return{rev:a.rev+m.rev,cost:a.cost+m.cost,tc:a.tc+m.tc,bench:a.bench+m.bench,mg:a.mg+m.mg};},{rev:0,cost:0,tc:0,bench:0,mg:0});
+  ann.mp=ann.rev>0?ann.mg/ann.rev*100:0;
+  var qdata=['Q1','Q2','Q3','Q4'].map(function(q,qi){
+    var sl=mdata.slice(qi*3,qi*3+3);
+    var r=sl.reduce(function(a,m){return{rev:a.rev+m.rev,cost:a.cost+m.cost,tc:a.tc+m.tc,bench:a.bench+m.bench,mg:a.mg+m.mg};},{rev:0,cost:0,tc:0,bench:0,mg:0});
+    r.label=q;r.mp=r.rev>0?r.mg/r.rev*100:0;return r;
+  });
+  var tdata=foreView==='monthly'?mdata:foreView==='quarterly'?qdata:[Object.assign({label:String(foreYear)},ann)];
+
+  var trows=tdata.map(function(d){
+    return'<tr style="background:'+(d.isCur?'rgba(15,155,110,.04)':'')+'">'
+      +'<td><div style="display:flex;align-items:center;gap:6px">'+(d.isCur?'<span style="width:6px;height:6px;border-radius:50%;background:var(--g);display:inline-block;flex-shrink:0"></span>':'')+'<span style="font-weight:'+(d.isCur?700:400)+'">'+d.label+'</span>'+(d.isCur?'<span style="font-size:10px;color:var(--g);font-weight:700;background:var(--gl);padding:1px 6px;border-radius:10px">current</span>':'')+'</div></td>'
+      +'<td class="num" style="color:var(--g);font-weight:700">'+fmt(d.rev)+'</td>'
+      +'<td class="num" style="color:var(--r)">'+fmt(d.cost)+'</td>'
+      +'<td class="num" style="color:var(--t5)">'+fmt(d.tc)+'</td>'
+      +'<td class="num" style="color:var(--a)">'+fmt(d.bench||0)+'</td>'
+      +'<td class="num" style="font-weight:700;color:'+(d.mg>=0?'var(--g)':'var(--r)')+'">'+fmt(d.mg)+'</td>'
+      +'<td><div style="display:flex;align-items:center;gap:7px"><div class="pb" style="width:50px"><div class="pb-f" style="width:'+Math.min(Math.max(+d.mp,0),100)+'%;background:'+(+d.mp>=0?'var(--g)':'var(--r)')+'"></div></div><span class="num" style="font-size:12px;font-weight:700;color:'+(+d.mp>=0?'var(--g)':'var(--r)')+'">'+pct(d.mp)+'</span></div></td>'
+    +'</tr>';
+  }).join('');
+
+  var contrib=state.projects.map(function(p){
+    var months=mdata.filter(function(_,i){return isActive(p,foreYear,i);});
+    var rev=months.length*projRevReported(p);
+    var cost=Array.from({length:12},function(_,i){return projCostReported(p,state.team,foreYear,i);}).reduce(function(a,b){return a+b;},0);
+    var mg=rev-cost,mp=rev>0?mg/rev*100:0;
+    var bcBadge='<span class="cur-badge">'+p.billingCurrency+'</span>';
+    var rawAnnual=fmtInCur(p.monthlyRevenue*months.length,p.billingCurrency||'INR');
+    return'<tr><td><strong>'+p.name+'</strong>'+bcBadge+'<br><span style="font-size:11px;color:var(--t4)">'+p.client+'</span></td>'
+      +'<td>'+tagHtml(p.status)+'</td>'
+      +'<td class="num">'+months.length+' / 12</td>'
+      +'<td><span class="num" style="color:var(--g);font-weight:700">'+fmt(rev)+'</span><br><span class="fx-info">'+rawAnnual+' '+p.billingCurrency+'</span></td>'
+      +'<td class="num" style="color:var(--r)">'+fmt(cost)+'</td>'
+      +'<td class="num" style="font-weight:700;color:'+(mg>=0?'var(--g)':'var(--r)')+'">'+fmt(mg)+'</td>'
+      +'<td class="num" style="font-size:12px;font-weight:700;color:'+(mp>=0?'var(--g)':'var(--r)')+'">'+pct(mp)+'</td>'
+    +'</tr>';
+  }).join('');
+
+  var legend=[['Revenue','#0F9B6E'],['Alloc Cost','#E53935'],['Bench','#F59E0B'],['Margin','#2563EB']].map(function(x){return'<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:'+x[1]+';display:inline-block"></span>'+x[0]+'</span>';}).join('');
+  var periodBtns=['monthly','quarterly','annual'].map(function(v){return'<button class="period-btn'+(foreView===v?' active':'')+'" onclick="setForeView(\''+v+'\')">'+(v.charAt(0).toUpperCase()+v.slice(1))+'</button>';}).join('');
+  var yrBtns=[CY-1,CY,CY+1].map(function(y){return'<button class="yr-btn'+(foreYear===y?' active':'')+'" onclick="setForeYear('+y+')">'+y+'</button>';}).join('');
+  var kpiCards=[
+    {l:'Annual Revenue',v:fmt(ann.rev),sub:state.projects.filter(function(p){return p.status==='active';}).length+' active projects',c:'var(--g)'},
+    {l:'Annual Alloc. Cost',v:fmt(ann.cost),sub:'converted team cost',c:'var(--r)'},
+    {l:'Annual Margin',v:fmt(ann.mg),sub:pct(ann.mp)+' avg margin',c:ann.mg>=0?'var(--g)':'var(--r)'},
+    {l:'Annual Bench Cost',v:fmt(ann.bench),sub:'unallocated team',c:'var(--a)'}
+  ].map(function(k){return'<div class="kpi"><div class="kpi-lbl">'+k.l+'</div><div class="kpi-val" style="color:'+k.c+';font-size:20px">'+k.v+'</div><div class="kpi-sub">'+k.sub+'</div></div>';}).join('');
+  var ftfoot=foreView!=='annual'?'<tfoot><tr><td>Total '+foreYear+'</td><td class="num" style="color:var(--g)">'+fmt(ann.rev)+'</td><td class="num" style="color:var(--r)">'+fmt(ann.cost)+'</td><td class="num" style="color:var(--t5)">'+fmt(ann.tc)+'</td><td class="num" style="color:var(--a)">'+fmt(ann.bench)+'</td><td class="num" style="color:'+(ann.mg>=0?'var(--g)':'var(--r)')+'">'+fmt(ann.mg)+'</td><td class="num" style="color:'+(ann.mp>=0?'var(--g)':'var(--r)')+';font-weight:700">'+pct(ann.mp)+'</td></tr></tfoot>':'';
+
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">'
+    +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="period-sw">'+periodBtns+'</div><div style="display:flex;gap:4px">'+yrBtns+'</div></div>'
+    +'<button class="btn" onclick="exportForecast()">&#8595; Export ('+foreYear+')</button></div>'
+    +'<div class="kpi-grid">'+kpiCards+'</div>'
+    +(foreView!=='annual'?'<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="sec-title" style="margin:0">'+(foreView==='quarterly'?'Quarterly':'Monthly')+' — '+foreYear+' <span style="font-weight:400;color:var(--t4);font-size:12px">in '+state.reportingCurrency+'</span></div><div style="display:flex;gap:12px;font-size:11px;color:var(--t4)">'+legend+'</div></div><div style="position:relative;height:240px"><canvas id="fore-chart"></canvas></div></div>':'')
+    +'<div class="card" style="margin-bottom:14px"><div class="sec-title">'+(foreView.charAt(0).toUpperCase()+foreView.slice(1))+' breakdown — '+foreYear+' <span style="font-weight:400;color:var(--t4);font-size:12px">(all values in '+state.reportingCurrency+')</span></div><div style="overflow-x:auto"><table class="tbl" style="min-width:640px"><thead><tr><th>Period</th><th>Revenue</th><th>Alloc. Cost</th><th>Team Cost</th><th>Bench</th><th>Gross Margin</th><th>Margin %</th></tr></thead><tbody>'+trows+'</tbody>'+ftfoot+'</table></div></div>'
+    +'<div class="card" style="margin-bottom:14px"><div class="sec-title">Project contribution — '+foreYear+'</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Project</th><th>Status</th><th>Active months</th><th>Annual Revenue ('+state.reportingCurrency+')</th><th>Annual Cost</th><th>Margin</th><th>Margin %</th></tr></thead><tbody>'+contrib+'</tbody></table></div></div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+    +'<div class="alert alert-b" style="flex:1">&#128196; All project revenues are converted from their billing currencies to <strong>'+state.reportingCurrency+'</strong>. All team costs are converted from local salary currencies. Edit FX rates to update all calculations instantly.</div>'
+    +'<div class="alert alert-g" style="flex:1">&#128190; Data auto-saved. Export downloads monthly + quarterly sheets as Excel.</div>'
+    +'</div>';
+
+  if(foreView!=='annual'){
+    setTimeout(function(){
+      var ctx=document.getElementById('fore-chart');if(!ctx)return;
+      if(foreChart){foreChart.destroy();foreChart=null;}
+      var fdata=foreView==='quarterly'?qdata:mdata;
+      foreChart=new Chart(ctx,{type:'bar',data:{labels:fdata.map(function(d){return d.label;}),datasets:[
+        {label:'Revenue',data:fdata.map(function(d){return Math.round(d.rev/1000);}),backgroundColor:'#0F9B6E',borderRadius:3,barPercentage:.65},
+        {label:'Alloc Cost',data:fdata.map(function(d){return Math.round(d.cost/1000);}),backgroundColor:'#E53935',borderRadius:3,barPercentage:.65},
+        {label:'Bench Cost',data:fdata.map(function(d){return Math.round(d.bench/1000);}),backgroundColor:'#F59E0B',borderRadius:3,barPercentage:.65},
+        {label:'Margin',data:fdata.map(function(d){return Math.round(d.mg/1000);}),type:'line',borderColor:'#2563EB',backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#2563EB',tension:.35,yAxisID:'y'},
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return chartTipFmt(c.parsed.y);}}}},scales:{x:{grid:{display:false},ticks:{font:{size:10,family:'DM Mono'},color:'#9CA3AF'}},y:{grid:{color:'#F3F4F6'},ticks:{font:{size:10,family:'DM Mono'},color:'#9CA3AF',callback:function(v){return chartTickFmt(v);}}}}}});
+    },50);
+  }
+}
+function setForeView(v){foreView=v;renderForecast();}
+function setForeYear(y){foreYear=y;renderForecast();}
+function exportForecast(){
+  var mdata=getMonthData(foreYear);
+  var rows=mdata.map(function(m,i){return{'Month':MO[i]+' '+foreYear,'Currency':state.reportingCurrency,'Revenue':Math.round(m.rev),'Allocated Cost':Math.round(m.cost),'Total Team Cost':Math.round(m.tc),'Bench Cost':Math.round(m.bench),'Gross Margin':Math.round(m.mg),'Margin %':Math.round(m.mp)};});
+  var ann2=mdata.reduce(function(a,m){return{rev:a.rev+m.rev,cost:a.cost+m.cost,tc:a.tc+m.tc,bench:a.bench+m.bench,mg:a.mg+m.mg};},{rev:0,cost:0,tc:0,bench:0,mg:0});
+  rows.push({'Month':'TOTAL '+foreYear,'Currency':state.reportingCurrency,'Revenue':Math.round(ann2.rev),'Allocated Cost':Math.round(ann2.cost),'Total Team Cost':Math.round(ann2.tc),'Bench Cost':Math.round(ann2.bench),'Gross Margin':Math.round(ann2.mg),'Margin %':Math.round(ann2.rev>0?ann2.mg/ann2.rev*100:0)});
+  var ws=XLSX.utils.json_to_sheet(rows);
+  var qrows=['Q1','Q2','Q3','Q4'].map(function(q,qi){var sl=mdata.slice(qi*3,qi*3+3);var r=sl.reduce(function(a,m){return{rev:a.rev+m.rev,cost:a.cost+m.cost,tc:a.tc+m.tc,bench:a.bench+m.bench,mg:a.mg+m.mg};},{rev:0,cost:0,tc:0,bench:0,mg:0});return{'Quarter':q+' '+foreYear,'Currency':state.reportingCurrency,'Revenue':Math.round(r.rev),'Allocated Cost':Math.round(r.cost),'Total Team Cost':Math.round(r.tc),'Bench Cost':Math.round(r.bench),'Gross Margin':Math.round(r.mg),'Margin %':Math.round(r.rev>0?r.mg/r.rev*100:0)};});
+  var ws2=XLSX.utils.json_to_sheet(qrows);
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Monthly');XLSX.utils.book_append_sheet(wb,ws2,'Quarterly');XLSX.writeFile(wb,'forecast_'+foreYear+'.xlsx');
+}
+
+// ── FX RATES PAGE ─────────────────────────────────────────────────────────────
+function renderFx(){
+  var el=document.getElementById('pg-fx');
+  var rates=state.fxRates||DEF_FX;
+  var rows=CUR_CODES.map(function(code){
+    var cur=CURRENCIES[code];
+    var r=rates[code]||DEF_FX[code]||1;
+    var rc=state.reportingCurrency;
+    var toRep=rc===code?1:toReport(1,code);
+    var fromRep=rc===code?1:1/toReport(1,rc)*toReport(1,code);
+    return'<tr>'
+      +'<td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px;width:28px;text-align:center">'+cur.sym+'</span><div><div style="font-weight:700;font-size:13px">'+code+'</div><div style="font-size:11px;color:var(--t4)">'+cur.name+'</div></div></div></td>'
+      +'<td class="fx-table"><input type="number" step="0.0001" value="'+r+'" style="width:120px" onchange="updFxRate(\''+code+'\',this.value)"/></td>'
+      +'<td style="font-size:12px;color:var(--t5)">1 USD = '+r+' '+code+'</td>'
+      +'<td class="num" style="font-size:12px;color:var(--b);font-weight:600">'+(code===rc?'—':'1 '+code+' = '+fmt(toRep)+'&nbsp;'+rc)+'</td>'
+      +'<td class="num" style="font-size:12px;color:var(--g)">'+fmt(toReport(1000,code))+' '+state.reportingCurrency+'</td>'
+    +'</tr>';
+  });
+  rows=CUR_CODES.map(function(code){
+    var cur=CURRENCIES[code];
+    var r=rates[code]||DEF_FX[code]||1;
+    var rc=state.reportingCurrency;
+    var toRep=toReport(1,code);
+    return'<tr>'
+      +'<td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px;width:28px;text-align:center">'+cur.sym+'</span><div><div style="font-weight:700;font-size:13px">'+code+'</div><div style="font-size:11px;color:var(--t4)">'+cur.name+'</div></div></div></td>'
+      +'<td class="fx-table"><input type="number" step="0.0001" value="'+r+'" min="0.00001" style="width:120px" onchange="updFxRate(\''+code+'\',this.value)"/></td>'
+      +'<td style="font-size:12px;color:var(--t5)">1 USD = '+r+' '+code+'</td>'
+      +'<td class="num" style="font-size:12px;color:var(--b)">'+(code===rc?'<span style="color:var(--g);font-weight:700">Reporting base</span>':'1 '+code+' = '+fmt(toRep)+' '+rc)+'</td>'
+      +'<td class="num" style="font-size:12px;color:var(--t5)">'+(code===rc?'—':'1000 '+code+' = '+fmt(toReport(1000,code))+' '+rc)+'</td>'
+    +'</tr>';
+  }).join('');
+
+  el.innerHTML='<div class="alert alert-b mb">&#9432;&nbsp; All rates are stored as <strong>units per 1 USD</strong>. Change any rate and every P&amp;L figure updates instantly — no page reload needed. Your rates are saved to the browser.</div>'
+    +'<div class="card">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div class="sec-title" style="margin:0">Exchange rates <span style="font-weight:400;color:var(--t4);font-size:12px">— reporting currency: <strong style="color:var(--g)">'+state.reportingCurrency+'</strong></span></div>'
+    +'<button class="btn btn-sm" onclick="resetFxRates()">&#8635; Reset to defaults</button>'
+    +'</div>'
+    +'<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Currency</th><th>Rate (per 1 USD)</th><th>USD reference</th><th>→ Reporting ('+state.reportingCurrency+')</th><th>Sample: 1,000 unit</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'</div>'
+    +'<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+    +'<div class="card"><div class="sec-title">How conversion works</div><div style="font-size:13px;color:var(--t5);line-height:1.8">'
+    +'<strong style="color:var(--t9)">Team salaries</strong> — each member has their own salary currency (e.g. ₹ INR, £ GBP). Cost to project is computed in that currency, then converted to '+state.reportingCurrency+' for P&amp;L.<br/><br/>'
+    +'<strong style="color:var(--t9)">Project billing</strong> — each project has a billing currency (e.g. $ USD from a US client). The billing amount is converted to '+state.reportingCurrency+' for margin calculations.<br/><br/>'
+    +'<strong style="color:var(--t9)">Margin = Revenue (converted) − Cost (converted)</strong>, both in '+state.reportingCurrency+'.'
+    +'</div></div>'
+    +'<div class="card"><div class="sec-title">Active currencies in use</div><div style="font-size:13px">'
+    +['Team salaries','Project billing'].map(function(label,i){
+      var codes=i===0
+        ?[...new Set(state.team.map(function(m){return m.salaryCurrency||'INR';}))]
+        :[...new Set(state.projects.map(function(p){return p.billingCurrency||'INR';}))];
+      return'<div style="margin-bottom:10px"><div style="font-weight:600;color:var(--t7);margin-bottom:5px">'+label+'</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+codes.map(function(c){var cur=CURRENCIES[c]||{sym:c,name:c};return'<span style="padding:3px 10px;background:var(--bl);color:var(--b);border-radius:20px;font-size:12px;font-weight:700">'+cur.sym+' '+c+'</span>';}).join('')+'</div></div>';
+    }).join('')
+    +'</div></div>'
+    +'</div>';
+}
+function updFxRate(code,val){
+  var v=parseFloat(val);if(isNaN(v)||v<=0)return;
+  state.fxRates[code]=v;
+  saveState();updateHeader();renderPage(currentPage);
+}
+function resetFxRates(){
+  if(!confirm('Reset all FX rates to defaults?'))return;
+  state.fxRates=Object.assign({},DEF_FX);
+  saveState();renderFx();updateHeader();
+}
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function openModal(id){
+  // Populate currency selects on open
+  if(id==='modal-member'){
+    buildCurSelect('nm-scur','INR');
+    document.getElementById('nm-scur-lbl').textContent='₹';
+  }
+  if(id==='modal-proj'){
+    buildCurSelect('np-bcur',state.reportingCurrency);
+    var lbl=document.getElementById('np-bcur-lbl');
+    if(lbl&&getCur())lbl.textContent=getCur().sym;
+  }
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.modal-bg.open').forEach(function(m){m.classList.remove('open');});}});
+// Update member modal salary label when currency changes
+document.addEventListener('change',function(e){
+  if(e.target&&e.target.id==='nm-scur'){
+    var lbl=document.getElementById('nm-scur-lbl');
+    if(lbl&&CURRENCIES[e.target.value])lbl.textContent=CURRENCIES[e.target.value].sym;
+  }
+});
+
+function renderPage(p){
+  if(p==='dashboard')renderDashboard();
+  else if(p==='projects')renderProjects();
+  else if(p==='team')renderTeam();
+  else if(p==='forecast')renderForecast();
+  else if(p==='fx')renderFx();
+}
+
+// Boot
+loadState();
+showPage('dashboard');
+</script>
+</body>
+</html>
